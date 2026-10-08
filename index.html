@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuaca — Weather App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #14152b;
+    --bg-panel: #1d1f3d;
+    --line: #33355c;
+    --ink: #eef0ff;
+    --ink-dim: #9ea3c9;
+    --warm: #ffb648;
+    --cool: #6fb7ff;
+    --error: #ff6b6b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: radial-gradient(circle at 20% -10%, #24274f 0%, var(--bg-deep) 55%);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px;
+  }
+
+  main {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  p.tagline {
+    color: var(--ink-dim);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  form {
+    display: flex;
+    gap: 8px;
+    margin-top: 28px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--cool);
+  }
+
+  button {
+    background: var(--warm);
+    color: #1c1400;
+    border: none;
+    border-radius: 10px;
+    padding: 0 20px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+
+  button:hover { opacity: 0.88; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .state-box {
+    margin-top: 24px;
+    min-height: 60px;
+  }
+
+  .hint {
+    color: var(--ink-dim);
+    font-size: 14px;
+    padding: 8px 2px;
+  }
+
+  .error-box {
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.35);
+    color: var(--error);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .weather-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px 24px;
+  }
+
+  .city-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  .updated {
+    color: var(--ink-dim);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  .temp-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .temp-big {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .condition {
+    color: var(--ink-dim);
+    font-size: 15px;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+
+  .detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .detail-label {
+    color: var(--ink-dim);
+    font-size: 12px;
+  }
+
+  .detail-value {
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .forecast-strip {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .forecast-day {
+    flex: 0 0 auto;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: center;
+    min-width: 68px;
+  }
+
+  .forecast-day .d-label { font-size: 12px; color: var(--ink-dim); }
+  .forecast-day .d-temp { font-size: 15px; font-weight: 600; margin-top: 6px; font-family: 'Space Grotesk', sans-serif; }
+
+  footer {
+    margin-top: 28px;
+    color: var(--ink-dim);
+    font-size: 12px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Cek Cuaca</h1>
+  <p class="tagline">Masukkan nama kota untuk melihat kondisi cuaca saat ini.</p>
+
+  <form id="search-form">
+    <input type="text" id="city-input" placeholder="Contoh: Medan, Jakarta, Bandung" autocomplete="off">
+    <button type="submit" id="search-btn">Cari</button>
+  </form>
+
+  <div class="state-box" id="state-box">
+    <p class="hint">Belum ada kota yang dicari.</p>
+  </div>
+
+  <footer>Data cuaca oleh Open-Meteo</footer>
+</main>
+
+<script>
+  const form = document.getElementById('search-form');
+  const input = document.getElementById('city-input');
+  const button = document.getElementById('search-btn');
+  const stateBox = document.getElementById('state-box');
+
+  const WEATHER_CODES = {
+    0: 'Cerah', 1: 'Cerah berawan sebagian', 2: 'Berawan sebagian', 3: 'Mendung',
+    45: 'Berkabut', 48: 'Kabut es',
+    51: 'Gerimis ringan', 53: 'Gerimis sedang', 55: 'Gerimis lebat',
+    61: 'Hujan ringan', 63: 'Hujan sedang', 65: 'Hujan lebat',
+    71: 'Salju ringan', 73: 'Salju sedang', 75: 'Salju lebat',
+    80: 'Hujan lokal ringan', 81: 'Hujan lokal sedang', 82: 'Hujan lokal lebat',
+    95: 'Badai petir', 96: 'Badai petir + hujan es', 99: 'Badai petir besar'
+  };
+
+  const describeWeatherCode = (code) => WEATHER_CODES[code] ?? 'Kondisi tidak diketahui';
+
+  const formatTime = (isoString) => {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDayLabel = (isoDate, index) => {
+    if (index === 0) return 'Hari ini';
+    const date = new Date(isoDate);
+    return date.toLocaleDateString('id-ID', { weekday: 'short' });
+  };
+
+  const renderLoading = () => {
+    stateBox.innerHTML = `<p class="hint">Mencari data cuaca...</p>`;
+  };
+
+  const renderError = (message) => {
+    stateBox.innerHTML = `
+      <div class="error-box">
+        <strong>Gagal memuat cuaca.</strong><br>${message}
+      </div>
+    `;
+  };
+
+  const renderWeather = (place, current, daily) => {
+    const forecastHtml = daily.time
+      .map((date, i) => `
+        <div class="forecast-day">
+          <div class="d-label">${formatDayLabel(date, i)}</div>
+          <div class="d-temp">${Math.round(daily.temperature_2m_max[i])}°</div>
+        </div>
+      `)
+      .join('');
+
+    stateBox.innerHTML = `
+      <div class="weather-card">
+        <div class="city-name">${place.name}, ${place.country ?? ''}</div>
+        <div class="updated">Diperbarui ${formatTime(current.time)}</div>
+
+        <div class="temp-row">
+          <div class="temp-big">${Math.round(current.temperature_2m)}°</div>
+          <div class="condition">${describeWeatherCode(current.weather_code)}</div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Terasa seperti</span>
+            <span class="detail-value">${Math.round(current.apparent_temperature)}°C</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Kelembapan</span>
+            <span class="detail-value">${current.relative_humidity_2m}%</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Kecepatan angin</span>
+            <span class="detail-value">${Math.round(current.wind_speed_10m)} km/j</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Curah hujan</span>
+            <span class="detail-value">${current.precipitation} mm</span>
+          </div>
+        </div>
+
+        <div class="forecast-strip">${forecastHtml}</div>
+      </div>
+    `;
+  };
+
+  const geocodeCity = async (cityName) => {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=id&format=json`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Server pencarian kota sedang bermasalah. Coba lagi nanti.');
+    }
+
+    const data = await response.json();
+
+    if (!data.results || data.results.length === 0) {
+      throw new Error(`Kota "${cityName}" tidak ditemukan. Periksa ejaan dan coba lagi.`);
+    }
+
+    return data.results[0];
+  };
+
+  const fetchWeather = async (latitude, longitude) => {
+    const params = new URLSearchParams({
+      latitude,
+      longitude,
+      current: 'temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m',
+      daily: 'temperature_2m_max',
+      timezone: 'auto',
+      forecast_days: 6
+    });
+
+    const url = `https://api.open-meteo.com/v1/forecast?${params}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Gagal mengambil data cuaca dari server.');
+    }
+
+    return response.json();
+  };
+
+  const handleSearch = async (event) => {
+    event.preventDefault();
+    const cityName = input.value.trim();
+
+    if (!cityName) {
+      renderError('Masukkan nama kota terlebih dahulu.');
+      return;
+    }
+
+    button.disabled = true;
+    renderLoading();
+
+    try {
+      const place = await geocodeCity(cityName);
+      const weatherData = await fetchWeather(place.latitude, place.longitude);
+      renderWeather(place, weatherData.current, weatherData.daily);
+    } catch (err) {
+      const isNetworkError = err instanceof TypeError;
+      const message = isNetworkError
+        ? 'Tidak bisa terhubung ke internet. Periksa koneksi kamu.'
+        : err.message;
+      renderError(message);
+    } finally {
+      button.disabled = false;
+    }
+  };
+
+  form.addEventListener('submit', handleSearch);
+</script>
+</body>
+</html>
